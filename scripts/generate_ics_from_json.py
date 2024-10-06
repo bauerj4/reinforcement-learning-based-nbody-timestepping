@@ -6,6 +6,7 @@ from typing import List
 
 SOFTENING = 0.001
 
+
 def read_config(config_file: str) -> dict:
     """
     Reads the JSON configuration file for the N-body problem.
@@ -20,9 +21,10 @@ def read_config(config_file: str) -> dict:
     dict
         Dictionary containing the N-body problem parameters.
     """
-    with open(config_file, 'r') as f:
+    with open(config_file, "r") as f:
         config = json.load(f)
     return config
+
 
 def write_gadget_hdf5(filename: str, config: dict) -> None:
     """
@@ -35,21 +37,21 @@ def write_gadget_hdf5(filename: str, config: dict) -> None:
     config : dict
         Dictionary containing the N-body problem parameters.
     """
-    particles = config['particles']
+    particles = config["particles"]
     num_particles = len(particles)
-    
+
     # Extracting time and softening length from config
-    time = config.get('time', 0.0)
-    softening_length = config.get('softening_length', SOFTENING)
+    time = config.get("time", 0.0)
+    softening_length = config.get("softening_length", SOFTENING)
 
     # Preparing data for each particle property
-    masses = np.array([p['mass'] for p in particles], dtype=np.float32)
-    positions = np.array([p['position'] for p in particles], dtype=np.float32)
-    velocities = np.array([p['velocity'] for p in particles], dtype=np.float32)
+    masses = np.array([p["mass"] for p in particles], dtype=np.float32)
+    positions = np.array([p["position"] for p in particles], dtype=np.float32)
+    velocities = np.array([p["velocity"] for p in particles], dtype=np.float32)
     particle_ids = np.arange(1, num_particles + 1, dtype=np.uint32)
 
     # Write the data to an HDF5 file in the GADGET-4 format
-    with h5py.File(filename, 'w') as f:
+    with h5py.File(filename, "w") as f:
         # Header group
         header = f.create_group("Header")
         header.attrs["NumPart_ThisFile"] = [num_particles, 0, 0, 0, 0, 0]
@@ -78,6 +80,7 @@ def write_gadget_hdf5(filename: str, config: dict) -> None:
         part_type_0.create_dataset("Masses", data=masses)
 
     print(f"GADGET-4 HDF5 IC file '{filename}' generated successfully!")
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:

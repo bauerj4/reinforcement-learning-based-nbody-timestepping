@@ -1,8 +1,15 @@
 from nbody_timestepping.agent import RLAgent
 from particle import Particle
 
-def symplectic_rl_learning(agent: RLAgent, particles: List[Particle], environment: Any, episodes: int, 
-                           base_timestep: float, integration_method: IntegrationMethod) -> None:
+
+def symplectic_rl_learning(
+    agent: RLAgent,
+    particles: List[Particle],
+    environment: Any,
+    episodes: int,
+    base_timestep: float,
+    integration_method: IntegrationMethod,
+) -> None:
     """
     Generalized reinforcement learning procedure for symplectic integrators.
 
@@ -52,7 +59,9 @@ def symplectic_rl_learning(agent: RLAgent, particles: List[Particle], environmen
                 # Get the new state
                 new_velocity = particle.velocity
                 new_acceleration = particle.acceleration
-                new_state = agent.calculate_state(particle.mass, new_velocity, new_acceleration)
+                new_state = agent.calculate_state(
+                    particle.mass, new_velocity, new_acceleration
+                )
 
                 # Calculate reward based on the system's energy error, for example
                 reward = environment.calculate_reward()

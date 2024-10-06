@@ -1,6 +1,9 @@
 import torch
+import numpy as np
 
 from enum import Enum
+from typing import List
+
 
 class IntegrationMethod(Enum):
     """
@@ -15,9 +18,11 @@ class IntegrationMethod(Enum):
     EULER : int
         Euler integration method.
     """
+
     SYMPLECTIC_ORDER_1 = 0
     SYMPLECTIC_ORDER_2 = 1
     EULER = 2
+
 
 class Particle:
     """
@@ -35,11 +40,29 @@ class Particle:
         Initial acceleration of the particle.
     """
 
-    def __init__(self, mass: float, position: List[float], velocity: List[float], acceleration: List[float]) -> None:
+    def __init__(
+        self,
+        mass: float,
+        position: List[float],
+        velocity: List[float],
+        acceleration: List[float] = None,
+    ) -> None:
         self.mass = mass
+        acceleration = acceleration or [0.0, 0.0, 0.0]
         self.position = torch.tensor(position, dtype=torch.float32)
         self.velocity = torch.tensor(velocity, dtype=torch.float32)
         self.acceleration = torch.tensor(acceleration, dtype=torch.float32)
+
+    def kinetic_energy(self) -> float:
+        """
+        Computes the kinetic energy of the particle.
+
+        Returns
+        -------
+        float
+            The kinetic energy of the particle.
+        """
+        return 0.5 * self.mass * np.dot(self.velocity, self.velocity)
 
     def drift(self, timestep: float) -> None:
         """
@@ -59,7 +82,9 @@ class Particle:
         """
         # Here, you should implement the specific logic for recalculating the acceleration.
         # For now, we assume it's just a placeholder update.
-        self.acceleration = -self.position / torch.norm(self.position)**3  # Assuming simple gravity for illustration
+        self.acceleration = (
+            -self.position / torch.norm(self.position) ** 3
+        )  # Assuming simple gravity for illustration
 
     def kick(self, timestep: float) -> None:
         """
