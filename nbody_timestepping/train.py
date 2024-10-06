@@ -1,14 +1,15 @@
-from nbody_timestepping.agent import RLAgent
-from particle import Particle
+from nbody_timestepping.agent import SimpleQAgent, Action
+from nbody_timestepping.environment import SimpleEnvironment
+from nbody_timestepping.particle import IntegrationMethod
 
 
-def symplectic_rl_learning(
-    agent: RLAgent,
-    particles: List[Particle],
-    environment: Any,
+def simple_rl_learning(
+    agent: SimpleQAgent,
+    environment: SimpleEnvironment,
     episodes: int,
     base_timestep: float,
     integration_method: IntegrationMethod,
+    base_steps_per_episode=10000,
 ) -> None:
     """
     Generalized reinforcement learning procedure for symplectic integrators.
@@ -28,12 +29,14 @@ def symplectic_rl_learning(
     integration_method : IntegrationMethod
         The integration method to be used (Symplectic order 1, 2, or Euler).
     """
+    particles = environment.particles
+
     for episode in range(episodes):
         for particle in particles:
             # Get the initial state
             velocity = particle.velocity
             acceleration = particle.acceleration
-            state = agent.calculate_state(particle.mass, velocity, acceleration)
+            state = agent.get_state(particle)
 
             done = False
             while not done:
@@ -47,6 +50,10 @@ def symplectic_rl_learning(
                     timestep = base_timestep / 2
                 elif action == Action.SEVERELY_REDUCE_TIMESTEP:
                     timestep = base_timestep / 16
+                elif action == Action.INCREASE_TIMESTEP:
+                    timestep = base_timestep * 2
+                elif action == Action.SEVERELY_INCREASE_TIMESTEP:
+                    timestep = base_timestep * 16
 
                 # Perform integration based on the chosen method
                 if integration_method == IntegrationMethod.SYMPLECTIC_ORDER_1:
@@ -59,9 +66,7 @@ def symplectic_rl_learning(
                 # Get the new state
                 new_velocity = particle.velocity
                 new_acceleration = particle.acceleration
-                new_state = agent.calculate_state(
-                    particle.mass, new_velocity, new_acceleration
-                )
+                new_state = agent.get_state(particle)
 
                 # Calculate reward based on the system's energy error, for example
                 reward = environment.calculate_reward()

@@ -1,0 +1,17 @@
+{
+    "agent" : {
+        "learning_rate" : 0.1,
+        "discount_factor" : 0.95,
+        "exploration_rate" : 1.0,
+        "exploration_decay" : 0.995,
+        "velocity_bins" : 10,
+        "acc_bins" : 10,
+        "dot_bins" : 10
+    },
+    "train" : {
+        "episodes" : 100,
+        "integration_method" : "EULER",
+        "base_timestep" : 0.001
+
+    }
+}
