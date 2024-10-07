@@ -52,6 +52,8 @@ class Particle:
         self.position = torch.tensor(position, dtype=torch.float32)
         self.velocity = torch.tensor(velocity, dtype=torch.float32)
         self.acceleration = torch.tensor(acceleration, dtype=torch.float32)
+        self.n_acc_calculations = 0
+        self.time_since_last_acceleration = None
 
     def kinetic_energy(self) -> float:
         """
@@ -80,11 +82,17 @@ class Particle:
         Recalculate the particle's acceleration based on the current system's state.
         This should include gravitational forces and other interactions.
         """
-        # Here, you should implement the specific logic for recalculating the acceleration.
-        # For now, we assume it's just a placeholder update.
-        self.acceleration = (
-            -self.position / torch.norm(self.position) ** 3
-        )  # Assuming simple gravity for illustration
+        # Do a gravity calculation
+        if (
+            self.time_since_last_acceleration is None
+            or self.time_since_last_acceleration >= self.timestep
+        ):
+            # Compute acceleration
+            self.acceleration = (
+                -self.position / torch.norm(self.position) ** 3
+            )  # Assuming simple gravity for illustration
+
+            self.n_acc_calculations += 1
 
     def kick(self, timestep: float) -> None:
         """

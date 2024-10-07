@@ -30,6 +30,7 @@ def simple_rl_learning(
         The integration method to be used (Symplectic order 1, 2, or Euler).
     """
     particles = environment.particles
+    steps = 0
 
     for episode in range(episodes):
         for particle in particles:
@@ -69,7 +70,7 @@ def simple_rl_learning(
                 new_state = agent.get_state(particle)
 
                 # Calculate reward based on the system's energy error, for example
-                reward = environment.calculate_reward()
+                reward = environment.calculate_reward(steps)
 
                 # Update Q-values
                 agent.update_q_value(state, action, reward, new_state)
