@@ -42,9 +42,10 @@ class SimpleEnvironment:
             masses = f["PartType0/Masses"][:]
             positions = f["PartType0/Coordinates"][:]
             velocities = f["PartType0/Velocities"][:]
+            particle_ids = f["PartType0/ParticleIDs"][:]
 
-            for mass, pos, vel in zip(masses, positions, velocities):
-                particle = Particle(mass=mass, position=pos, velocity=vel)
+            for mass, pos, vel, pid in zip(masses, positions, velocities, particle_ids):
+                particle = Particle(mass=mass, position=pos, velocity=vel, pid=pid)
                 self.particles.append(particle)
 
     def compute_total_energy(self) -> float:

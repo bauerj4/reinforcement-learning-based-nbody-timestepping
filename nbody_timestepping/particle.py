@@ -2,7 +2,7 @@ import torch
 import numpy as np
 
 from enum import Enum
-from typing import List
+from typing import List, Any
 
 
 class IntegrationMethod(Enum):
@@ -36,6 +36,8 @@ class Particle:
         Initial position of the particle.
     velocity : list or torch.Tensor
         Initial velocity of the particle.
+    pid : int
+        The particle id
     acceleration : list or torch.Tensor
         Initial acceleration of the particle.
     """
@@ -45,9 +47,11 @@ class Particle:
         mass: float,
         position: List[float],
         velocity: List[float],
+        pid: int,
         acceleration: List[float] = None,
     ) -> None:
         self.mass = mass
+        self.pid = pid
         acceleration = acceleration or [0.0, 0.0, 0.0]
         self.position = torch.tensor(position, dtype=torch.float32)
         self.velocity = torch.tensor(velocity, dtype=torch.float32)
@@ -77,7 +81,7 @@ class Particle:
         """
         self.position += self.velocity * timestep
 
-    def recalculate_acceleration(self) -> None:
+    def recalculate_acceleration(self, particles: List[Any], g: float = 1.0) -> None:
         """
         Recalculate the particle's acceleration based on the current system's state.
         This should include gravitational forces and other interactions.
@@ -88,10 +92,14 @@ class Particle:
             or self.time_since_last_acceleration >= self.timestep
         ):
             # Compute acceleration
-            self.acceleration = (
-                -self.position / torch.norm(self.position) ** 3
-            )  # Assuming simple gravity for illustration
-
+            acceleration = torch.zeroes(3)
+            for p in particles:
+                if p.id == self.id:
+                    continue
+                r_hat = p.position - self.position
+                acceleration += -r_hat * g * p.mass / torch.norm(r_hat) ** 3
+            acceleration = acceleration.cpu().numpy().tolist()
+            self.acceleration = acceleration
             self.n_acc_calculations += 1
 
     def kick(self, timestep: float) -> None:
