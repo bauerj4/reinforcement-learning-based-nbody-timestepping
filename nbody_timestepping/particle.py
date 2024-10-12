@@ -101,6 +101,7 @@ class Particle:
             acceleration = acceleration.cpu().numpy().tolist()
             self.acceleration = acceleration
             self.n_acc_calculations += 1
+            self.time_since_last_acceleration = 0.0
 
     def kick(self, timestep: float) -> None:
         """
@@ -113,41 +114,3 @@ class Particle:
         """
         self.recalculate_acceleration()  # Recalculate acceleration before each kick
         self.velocity += self.acceleration * timestep
-
-    def symplectic_integrator_order_1(self, timestep: float) -> None:
-        """
-        Symplectic integrator of order 1 (Leapfrog method).
-
-        Parameters
-        ----------
-        timestep : float
-            The timestep for the integrator.
-        """
-        self.kick(timestep)
-        self.drift(timestep)
-
-    def symplectic_integrator_order_2(self, timestep: float) -> None:
-        """
-        Symplectic integrator of order 2 (Leapfrog with midpoint).
-
-        Parameters
-        ----------
-        timestep : float
-            The timestep for the integrator.
-        """
-        self.kick(timestep / 2)
-        self.drift(timestep)
-        self.kick(timestep / 2)
-
-    def euler_integrator(self, timestep: float) -> None:
-        """
-        Euler's method for updating position and velocity.
-
-        Parameters
-        ----------
-        timestep : float
-            The timestep for the Euler integrator.
-        """
-        self.recalculate_acceleration()  # Recalculate acceleration before each step
-        self.velocity += self.acceleration * timestep
-        self.position += self.velocity * timestep

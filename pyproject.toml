@@ -12,6 +12,7 @@ torch = "^2.4.1"
 numpy = "^2.1.2"
 h5py = "^3.12.1"
 black = "^24.8.0"
+tqdm = "^4.66.5"
 
 
 [build-system]

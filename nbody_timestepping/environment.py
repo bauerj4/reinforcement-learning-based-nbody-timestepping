@@ -29,6 +29,14 @@ class SimpleEnvironment:
         self.last_energy = None
         self.initial_energy = None
 
+    @property
+    def smallest_timestep(self):
+        smallest_timestep = None
+        for p in self.particles:
+            if smallest_timestep is None or p.timestep < smallest_timestep:
+                smallest_timestep = p.timestep
+        return smallest_timestep
+
     def load_particles_from_gadget(self, file_path: str) -> None:
         """
         Loads particles from a GADGET HDF5 initial conditions file.
@@ -103,3 +111,45 @@ class SimpleEnvironment:
         ) / self.initial_energy + self.gamma * (
             n_acc_calculations / (len(self.particles) * n_steps)
         )
+
+    def symplectic_integrator_order_1(self, timestep: float) -> None:
+        """
+        Symplectic integrator of order 1 (Leapfrog method).
+
+        Parameters
+        ----------
+        timestep : float
+            The timestep for the integrator.
+        """
+        for p in self.particles:
+            p.kick(timestep)
+            p.drift(timestep)
+
+    def symplectic_integrator_order_2(self, timestep: float) -> None:
+        """
+        Symplectic integrator of order 2 (Leapfrog with midpoint).
+
+        Parameters
+        ----------
+        timestep : float
+            The timestep for the integrator.
+        """
+
+        for p in self.particles:
+            p.kick(timestep / 2)
+            p.drift(timestep)
+            p.kick(timestep / 2)
+
+    def euler_integrator(self, timestep: float) -> None:
+        """
+        Euler's method for updating position and velocity.
+
+        Parameters
+        ----------
+        timestep : float
+            The timestep for the Euler integrator.
+        """
+        for p in self.particles:
+            self.recalculate_acceleration()  # Recalculate acceleration before each step
+            self.velocity += self.acceleration * timestep
+            self.position += self.velocity * timestep
