@@ -12,7 +12,7 @@ from nbody_timestepping.particle import IntegrationMethod
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print("Usage: python generate_gadget_hdf5.py <config.json> <inital_conditions>")
+        print("Usage: python run_simple.py <config.json> <inital_conditions>")
         sys.exit(1)
 
     # Load config
@@ -38,4 +38,7 @@ if __name__ == "__main__":
         config["train"]["episodes"],
         config["train"]["base_timestep"],
         integration_method,
+        base_steps_per_episode=config["train"]["base_steps_per_episode"],
+        max_timestep=config["train"]["max_timestep"],
+        min_timestep=config["train"]["min_timestep"],
     )

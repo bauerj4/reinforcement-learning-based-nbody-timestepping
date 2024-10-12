@@ -1,10 +1,17 @@
 import logging
 
 from tqdm import tqdm
+from copy import deepcopy
 
 from nbody_timestepping.agent import SimpleQAgent, Action
 from nbody_timestepping.environment import SimpleEnvironment
 from nbody_timestepping.particle import IntegrationMethod
+
+# Create a logger
+logger = logging.getLogger(__name__)
+
+# Set the logging level
+logger.setLevel(logging.DEBUG)
 
 
 def simple_rl_learning(
@@ -41,58 +48,63 @@ def simple_rl_learning(
     max_timestep: float
         The maximum timestep a particle can have
     """
-    particles = environment.particles
-    steps = 0
+    initial_environment = deepcopy(environment)
 
-    logging.info("Starting Q-Table Learning.")
+    logger.info("Starting Q-Table Learning.")
     for episode in range(episodes):
-        logging.info(f"Starting episode {episode + 1} / {episodes}.")
+        logging.info("Doing initial energy calculation.")
+        environment = deepcopy(initial_environment)
+        environment.compute_total_energy()
+        steps = 0
+        for p in environment.particles:
+            p.timestep = base_timestep
 
-        # 1. Choose action
-        # 2. Advance the particles and then
-        # 3. compute the RL agent properties.
-        n_reduce = 0
-        n_severely_reduce = 0
-        n_increase = 0
-        n_severely_increase = 0
-        n_keep = 0
-
-        for particle in particles:
-            # Get the initial state
-            state = agent.get_state(particle)
-
-            # Agent chooses action
-            action = agent.choose_action(state)
-
-            # Update timestep based on action
-            if action == Action.KEEP_TIMESTEP:
-                timestep = base_timestep
-                n_keep += 1
-            elif action == Action.REDUCE_TIMESTEP:
-                timestep = max(base_timestep / 2, min_timestep)
-                n_reduce += 1
-            elif action == Action.SEVERELY_REDUCE_TIMESTEP:
-                timestep = max(base_timestep / 16, min_timestep)
-                n_severely_reduce += 1
-            elif action == Action.INCREASE_TIMESTEP:
-                timestep = min(base_timestep * 2, max_timestep)
-                n_increase += 1
-            elif action == Action.SEVERELY_INCREASE_TIMESTEP:
-                timestep = min(base_timestep * 16, max_timestep)
-                n_severely_increase += 1
-            particle.timestep = timestep
-
-        logging.info("Choose actions:")
-        logging.info(f"Keep: {n_keep}")
-        logging.info(f"Increase: {n_increase}")
-        logging.info(f"Severely Increase: {n_severely_increase}")
-        logging.info(f"Reduce: {n_reduce}")
-        logging.info(f"Severely Reduce: {n_severely_reduce}")
+        logger.info(f"Starting episode {episode + 1} / {episodes}.")
 
         for step in tqdm(range(base_steps_per_episode), desc="Simulation Step: "):
+            # 1. Choose action
+            # 2. Advance the particles and then
+            # 3. compute the RL agent properties.
+            n_reduce = 0
+            n_severely_reduce = 0
+            n_increase = 0
+            n_severely_increase = 0
+            n_keep = 0
+
+            for particle in environment.particles:
+                # Get the initial state
+                state = agent.get_state(particle)
+
+                # Agent chooses action
+                action = agent.choose_action(state)
+
+                # Update timestep based on action
+                if action == Action.KEEP_TIMESTEP:
+                    timestep = base_timestep
+                    n_keep += 1
+                elif action == Action.REDUCE_TIMESTEP:
+                    timestep = max(base_timestep / 2, min_timestep)
+                    n_reduce += 1
+                elif action == Action.SEVERELY_REDUCE_TIMESTEP:
+                    timestep = max(base_timestep / 16, min_timestep)
+                    n_severely_reduce += 1
+                elif action == Action.INCREASE_TIMESTEP:
+                    timestep = min(base_timestep * 2, max_timestep)
+                    n_increase += 1
+                elif action == Action.SEVERELY_INCREASE_TIMESTEP:
+                    timestep = min(base_timestep * 16, max_timestep)
+                    n_severely_increase += 1
+                particle.timestep = timestep
+
+            # logger.info("Choose actions:")
+            # logger.info(f"Keep: {n_keep}")
+            # logger.info(f"Increase: {n_increase}")
+            # logger.info(f"Severely Increase: {n_severely_increase}")
+            # logger.info(f"Reduce: {n_reduce}")
+            # logger.info(f"Severely Reduce: {n_severely_reduce}")
+
             smallest_timestep = environment.smallest_timestep
             n_substeps = int(base_timestep / smallest_timestep)
-
             for _ in range(n_substeps):
                 # Perform integration based on the chosen method
                 if integration_method == IntegrationMethod.SYMPLECTIC_ORDER_1:
@@ -101,11 +113,13 @@ def simple_rl_learning(
                     environment.symplectic_integrator_order_2(timestep)
                 elif integration_method == IntegrationMethod.EULER:
                     environment.euler_integrator(timestep)
+            # Increment steps
+            steps += 1
 
             # Calculate reward based on the system's energy error
             reward = environment.calculate_reward(steps)
 
-            for particle in particles:
+            for particle in environment.particles:
                 # Get the new state
                 new_state = agent.get_state(particle)
 
@@ -114,7 +128,6 @@ def simple_rl_learning(
 
                 # Transition to next state
                 state = new_state
-                steps += 1
 
             # Decay exploration rate
             agent.decay_exploration()

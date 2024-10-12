@@ -28,6 +28,7 @@ class SimpleEnvironment:
         self.this_energy = None
         self.last_energy = None
         self.initial_energy = None
+        self.gamma = gamma
 
     @property
     def smallest_timestep(self):
@@ -150,6 +151,8 @@ class SimpleEnvironment:
             The timestep for the Euler integrator.
         """
         for p in self.particles:
-            self.recalculate_acceleration()  # Recalculate acceleration before each step
-            self.velocity += self.acceleration * timestep
-            self.position += self.velocity * timestep
+            p.recalculate_acceleration(
+                self.particles
+            )  # Recalculate acceleration before each step
+            p.velocity += p.acceleration * timestep
+            p.position += p.velocity * timestep

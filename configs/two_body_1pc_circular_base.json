@@ -11,6 +11,7 @@
     "train" : {
         "episodes" : 100,
         "integration_method" : "EULER",
+        "base_steps_per_episode" : 1000,
         "base_timestep" : 0.001,
         "min_timestep" : 0.000001,
         "max_timestep" : 1.0

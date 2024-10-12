@@ -58,6 +58,7 @@ class Particle:
         self.acceleration = torch.tensor(acceleration, dtype=torch.float32)
         self.n_acc_calculations = 0
         self.time_since_last_acceleration = None
+        self.timestep = 1.0
 
     def kinetic_energy(self) -> float:
         """
@@ -92,13 +93,13 @@ class Particle:
             or self.time_since_last_acceleration >= self.timestep
         ):
             # Compute acceleration
-            acceleration = torch.zeroes(3)
+            acceleration = torch.zeros(3)
             for p in particles:
-                if p.id == self.id:
+                if p.pid == self.pid:
                     continue
                 r_hat = p.position - self.position
                 acceleration += -r_hat * g * p.mass / torch.norm(r_hat) ** 3
-            acceleration = acceleration.cpu().numpy().tolist()
+            acceleration = acceleration.cpu().numpy()
             self.acceleration = acceleration
             self.n_acc_calculations += 1
             self.time_since_last_acceleration = 0.0
