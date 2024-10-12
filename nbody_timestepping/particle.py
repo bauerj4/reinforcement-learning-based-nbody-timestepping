@@ -82,7 +82,9 @@ class Particle:
         """
         self.position += self.velocity * timestep
 
-    def recalculate_acceleration(self, particles: List[Any], g: float = 1.0) -> None:
+    def recalculate_acceleration(
+        self, particles: List[Any], timestep: float = None, g: float = 1.0
+    ) -> None:
         """
         Recalculate the particle's acceleration based on the current system's state.
         This should include gravitational forces and other interactions.
@@ -103,6 +105,8 @@ class Particle:
             self.acceleration = acceleration
             self.n_acc_calculations += 1
             self.time_since_last_acceleration = 0.0
+        elif timestep is not None:
+            self.time_since_last_acceleration += timestep
 
     def kick(self, timestep: float) -> None:
         """

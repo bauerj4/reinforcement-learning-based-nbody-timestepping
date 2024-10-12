@@ -41,4 +41,5 @@ if __name__ == "__main__":
         base_steps_per_episode=config["train"]["base_steps_per_episode"],
         max_timestep=config["train"]["max_timestep"],
         min_timestep=config["train"]["min_timestep"],
+        data_directory=config["train"]["data_directory"],
     )

@@ -106,6 +106,7 @@ class SimpleEnvironment:
             The reward (penalty) for changes in energy and number
             of steps taken
         """
+        self.compute_total_energy()
         n_acc_calculations = sum([p.n_acc_calculations for p in self.particles])
         return -(1.0 - self.gamma) * (
             self.this_energy - self.initial_energy
@@ -152,7 +153,8 @@ class SimpleEnvironment:
         """
         for p in self.particles:
             p.recalculate_acceleration(
-                self.particles
+                self.particles, timestep=timestep
             )  # Recalculate acceleration before each step
             p.velocity += p.acceleration * timestep
             p.position += p.velocity * timestep
+            # print(p.position, (p.position.dot(p.position))**0.5)

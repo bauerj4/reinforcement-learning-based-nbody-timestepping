@@ -1,3 +1,4 @@
+import os
 import logging
 
 from tqdm import tqdm
@@ -23,6 +24,7 @@ def simple_rl_learning(
     base_steps_per_episode: int = 10000,
     min_timestep: float = 1e-6,
     max_timestep: float = 1.0,
+    data_directory: str = None,
 ) -> None:
     """
     Generalized reinforcement learning procedure for symplectic integrators.
@@ -47,11 +49,18 @@ def simple_rl_learning(
         The minimum timestep a particle can have
     max_timestep: float
         The maximum timestep a particle can have
+    data_directory: str
+        Where to write simulation outputs to
     """
     initial_environment = deepcopy(environment)
 
     logger.info("Starting Q-Table Learning.")
+
     for episode in range(episodes):
+        if data_directory is not None:
+            energies_file = open(
+                os.path.join(data_directory, f"{episode}.energies.dat"), "w"
+            )
         logging.info("Doing initial energy calculation.")
         environment = deepcopy(initial_environment)
         environment.compute_total_energy()
@@ -131,3 +140,15 @@ def simple_rl_learning(
 
             # Decay exploration rate
             agent.decay_exploration()
+
+            # Write outputs
+            if data_directory is not None:
+                total_acc_calculations = sum(
+                    [p.n_acc_calculations for p in environment.particles]
+                )
+                energies_file.write(
+                    f"{steps * base_timestep}, {smallest_timestep}, {environment.this_energy}, {total_acc_calculations}\n"
+                )
+
+        if data_directory is not None:
+            energies_file.close()
