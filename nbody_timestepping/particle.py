@@ -4,6 +4,13 @@ import numpy as np
 from enum import Enum
 from typing import List, Any
 
+GRAVITY = 6.6738e-8
+LENGTH_UNIT_CM = 3.085678e21
+MASS_UNIT_G = 1.989e43
+VELOCITY_UNIT_CM_S = 1.0e5
+TIME_UNIT_S = LENGTH_UNIT_CM / VELOCITY_UNIT_CM_S
+INTERNAL_G = GRAVITY / LENGTH_UNIT_CM**3 * MASS_UNIT_G * TIME_UNIT_S**2
+
 
 class IntegrationMethod(Enum):
     """
@@ -83,13 +90,15 @@ class Particle:
         self.position += self.velocity * timestep
 
     def recalculate_acceleration(
-        self, particles: List[Any], timestep: float = None, g: float = 1.0
+        self, particles: List[Any], timestep: float = None, g: float = INTERNAL_G
     ) -> None:
         """
         Recalculate the particle's acceleration based on the current system's state.
         This should include gravitational forces and other interactions.
         """
         # Do a gravity calculation
+        if timestep is not None and self.time_since_last_acceleration is not None:
+            self.time_since_last_acceleration += timestep
         if (
             self.time_since_last_acceleration is None
             or self.time_since_last_acceleration >= self.timestep
@@ -100,15 +109,15 @@ class Particle:
                 if p.pid == self.pid:
                     continue
                 r_hat = p.position - self.position
-                acceleration += -r_hat * g * p.mass / torch.norm(r_hat) ** 3
+                acceleration += r_hat * g * p.mass / torch.norm(r_hat) ** 3
             acceleration = acceleration.cpu().numpy()
             self.acceleration = acceleration
             self.n_acc_calculations += 1
             self.time_since_last_acceleration = 0.0
-        elif timestep is not None:
-            self.time_since_last_acceleration += timestep
+            # print(self.position, self.velocity, self.acceleration, torch.norm(self.position))
+            # print(self.time_since_last_acceleration, self.n_acc_calculations, self.acceleration, self.position)
 
-    def kick(self, timestep: float) -> None:
+    def kick(self, timestep: float, particles: List[Any]) -> None:
         """
         Update the velocity of the particle based on the current acceleration.
 
@@ -117,5 +126,7 @@ class Particle:
         timestep : float
             The timestep for velocity update.
         """
-        self.recalculate_acceleration()  # Recalculate acceleration before each kick
+        self.recalculate_acceleration(
+            particles, timestep=timestep
+        )  # Recalculate acceleration before each kick
         self.velocity += self.acceleration * timestep

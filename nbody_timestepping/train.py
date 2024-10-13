@@ -61,6 +61,14 @@ def simple_rl_learning(
             energies_file = open(
                 os.path.join(data_directory, f"{episode}.energies.dat"), "w"
             )
+            particles_files = [
+                open(
+                    os.path.join(data_directory, f"episode.particle.{i}.{episode}.dat"),
+                    "w",
+                )
+                for i in range(len(environment.particles))
+            ]
+
         logging.info("Doing initial energy calculation.")
         environment = deepcopy(initial_environment)
         environment.compute_total_energy()
@@ -149,6 +157,15 @@ def simple_rl_learning(
                 energies_file.write(
                     f"{steps * base_timestep}, {smallest_timestep}, {environment.this_energy}, {total_acc_calculations}\n"
                 )
+                for i, p in enumerate(particles_files):
+                    x, y, z = environment.particles[i].position
+                    vx, vy, vz = environment.particles[i].velocity
+                    ax, ay, az = environment.particles[i].acceleration
+                    p.write(
+                        f"{steps * base_timestep}, {x}, {y}, {z}, {vx}, {vy}, {vz}, {ax}, {ay}, {az}\n"
+                    )
 
         if data_directory is not None:
             energies_file.close()
+            for p in particles_files:
+                p.close()

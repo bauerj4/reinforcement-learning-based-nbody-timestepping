@@ -1,7 +1,8 @@
 import h5py
 import numpy as np
+import torch
 
-from nbody_timestepping.particle import Particle
+from nbody_timestepping.particle import Particle, INTERNAL_G
 
 
 class SimpleEnvironment:
@@ -11,7 +12,7 @@ class SimpleEnvironment:
     in the 0 position.
     """
 
-    def __init__(self, G: float = 1.0, gamma: float = 0.5):
+    def __init__(self, G: float = INTERNAL_G, gamma: float = 0.5):
         """
         Initializes an empty environment. Particles can be loaded from a GADGET file.
 
@@ -124,7 +125,7 @@ class SimpleEnvironment:
             The timestep for the integrator.
         """
         for p in self.particles:
-            p.kick(timestep)
+            p.kick(timestep, self.particles)
             p.drift(timestep)
 
     def symplectic_integrator_order_2(self, timestep: float) -> None:
@@ -138,9 +139,9 @@ class SimpleEnvironment:
         """
 
         for p in self.particles:
-            p.kick(timestep / 2)
+            p.kick(timestep / 2, self.particles)
             p.drift(timestep)
-            p.kick(timestep / 2)
+            p.kick(timestep / 2, self.particles)
 
     def euler_integrator(self, timestep: float) -> None:
         """
@@ -152,9 +153,11 @@ class SimpleEnvironment:
             The timestep for the Euler integrator.
         """
         for p in self.particles:
-            p.recalculate_acceleration(
-                self.particles, timestep=timestep
-            )  # Recalculate acceleration before each step
-            p.velocity += p.acceleration * timestep
+            p.recalculate_acceleration(self.particles, timestep=timestep)
             p.position += p.velocity * timestep
-            # print(p.position, (p.position.dot(p.position))**0.5)
+            # p.recalculate_acceleration(
+            #     self.particles, timestep=timestep
+            # )
+            p.velocity += p.acceleration * timestep
+            # print(p.position, p.velocity, p.acceleration, torch.norm(p.position))
+            # import pdb; pdb.set_trace()
