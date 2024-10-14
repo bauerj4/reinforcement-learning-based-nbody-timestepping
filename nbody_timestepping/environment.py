@@ -126,6 +126,7 @@ class SimpleEnvironment:
         """
         for p in self.particles:
             p.kick(timestep, self.particles)
+        for p in self.particles:
             p.drift(timestep)
 
     def symplectic_integrator_order_2(self, timestep: float) -> None:
@@ -137,11 +138,22 @@ class SimpleEnvironment:
         timestep : float
             The timestep for the integrator.
         """
+        # We should calculate if the total timestep will take us to a new
+        # force calulation. The half steps will mess this calculation up.
+        if all([p.time_since_last_acceleration is not None for p in self.particles]):
+            recalculate_forces = [
+                p.time_since_last_acceleration + timestep >= p.timestep
+                for p in self.particles
+            ]
+        else:
+            recalculate_forces = [True] * len(self.particles)
 
+        for p, recalculate_force in zip(self.particles, recalculate_forces):
+            p.kick(timestep / 2, self.particles, force_recalculate=recalculate_force)
         for p in self.particles:
-            p.kick(timestep / 2, self.particles)
             p.drift(timestep)
-            p.kick(timestep / 2, self.particles)
+        for p, recalculate_force in zip(self.particles, recalculate_forces):
+            p.kick(timestep / 2, self.particles, force_recalculate=recalculate_force)
 
     def euler_integrator(self, timestep: float) -> None:
         """
@@ -154,6 +166,7 @@ class SimpleEnvironment:
         """
         for p in self.particles:
             p.recalculate_acceleration(self.particles, timestep=timestep)
+        for p in self.particles:
             p.position += p.velocity * timestep
             # p.recalculate_acceleration(
             #     self.particles, timestep=timestep

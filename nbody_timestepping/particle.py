@@ -90,7 +90,11 @@ class Particle:
         self.position += self.velocity * timestep
 
     def recalculate_acceleration(
-        self, particles: List[Any], timestep: float = None, g: float = INTERNAL_G
+        self,
+        particles: List[Any],
+        timestep: float = None,
+        g: float = INTERNAL_G,
+        force_recalculate: bool = False,
     ) -> None:
         """
         Recalculate the particle's acceleration based on the current system's state.
@@ -102,6 +106,7 @@ class Particle:
         if (
             self.time_since_last_acceleration is None
             or self.time_since_last_acceleration >= self.timestep
+            or force_recalculate
         ):
             # Compute acceleration
             acceleration = torch.zeros(3)
@@ -117,7 +122,9 @@ class Particle:
             # print(self.position, self.velocity, self.acceleration, torch.norm(self.position))
             # print(self.time_since_last_acceleration, self.n_acc_calculations, self.acceleration, self.position)
 
-    def kick(self, timestep: float, particles: List[Any]) -> None:
+    def kick(
+        self, timestep: float, particles: List[Any], force_recalculate: bool = False
+    ) -> None:
         """
         Update the velocity of the particle based on the current acceleration.
 
@@ -125,8 +132,13 @@ class Particle:
         ----------
         timestep : float
             The timestep for velocity update.
+        particles : List[Particle]
+            The particles to compute acceleration on
+        force_recalculate : bool
+            Overrides time accumulation scheme and calculates force anyways. Needed
+            to handle half steps.
         """
         self.recalculate_acceleration(
-            particles, timestep=timestep
+            particles, timestep=timestep, force_recalculate=force_recalculate
         )  # Recalculate acceleration before each kick
         self.velocity += self.acceleration * timestep
