@@ -39,6 +39,14 @@ class SimpleEnvironment:
                 smallest_timestep = p.timestep
         return smallest_timestep
 
+    @property
+    def biggest_timestep(self):
+        biggest_timestep = None
+        for p in self.particles:
+            if biggest_timestep is None or p.timestep > biggest_timestep:
+                biggest_timestep = p.timestep
+        return biggest_timestep
+
     def load_particles_from_gadget(self, file_path: str) -> None:
         """
         Loads particles from a GADGET HDF5 initial conditions file.
@@ -109,11 +117,15 @@ class SimpleEnvironment:
         """
         self.compute_total_energy()
         n_acc_calculations = sum([p.n_acc_calculations for p in self.particles])
-        return -(1.0 - self.gamma) * (
-            self.this_energy - self.initial_energy
-        ) / self.initial_energy + self.gamma * (
+        energy_term = (
+            -(1.0 - self.gamma)
+            * 1e5
+            * (abs((self.this_energy - self.last_energy + 1) / self.initial_energy))
+        )
+        steps_term = -self.gamma * (
             n_acc_calculations / (len(self.particles) * n_steps)
         )
+        return energy_term + steps_term, energy_term, steps_term
 
     def symplectic_integrator_order_1(self, timestep: float) -> None:
         """

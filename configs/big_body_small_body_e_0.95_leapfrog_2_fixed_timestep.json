@@ -1,0 +1,20 @@
+{
+    "agent" : {
+        "learning_rate" : 0.1,
+        "discount_factor" : 0.95,
+        "exploration_rate" : 1.0,
+        "exploration_decay" : 0.995,
+        "velocity_bins" : 10,
+        "acc_bins" : 10,
+        "dot_bins" : 10
+    },
+    "train" : {
+        "episodes" : 1,
+        "integration_method" : "SYMPLECTIC_ORDER_2",
+        "base_steps_per_episode" : 100000,
+        "base_timestep" : 0.000025,
+        "min_timestep" : 0.000025,
+        "max_timestep" : 0.000025,
+        "data_directory" : "data/big_body_small_body_e_0.95_leapfrog_2_fixed_timestep"
+    }
+}

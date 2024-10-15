@@ -81,9 +81,14 @@ class SimpleQAgent(RLAgent):
         discount_factor=0.95,
         exploration_rate=1.0,
         exploration_decay=0.995,
-        velocity_bins=10,
-        acc_bins=10,
-        dot_bins=10,
+        velocity_bins=7,
+        acc_bins=7,
+        dot_bins=7,
+        t_step_bins=5,
+        vel_hist_max=100000.0,
+        acc_hist_max=1000000.0,
+        t_step_hist_min=1e-10,
+        t_step_hist_max=1e-2,
         action_enum=Action,
     ):
         super().__init__()
@@ -95,9 +100,19 @@ class SimpleQAgent(RLAgent):
         self.acc_bins = acc_bins
         self.dot_bins = dot_bins
         self.action_enum = action_enum
+        self.t_step_bins = t_step_bins
+
+        self.dot_edges = np.linspace(0, 1, dot_bins)
+        self.log10_vel_edges = np.linspace(0, np.log10(vel_hist_max), velocity_bins)
+        self.log10_acc_edges = np.linspace(0, np.log10(acc_hist_max), acc_bins)
+        self.log10_t_edges = np.linspace(
+            np.log10(t_step_hist_min), np.log10(t_step_hist_max), t_step_bins
+        )
 
         # State space size: velocity magnitude, acceleration magnitude, and dot product
-        self.state_space_size = self.velocity_bins * self.acc_bins * self.dot_bins
+        self.state_space_size = (
+            self.velocity_bins * self.acc_bins * self.dot_bins * self.t_step_bins
+        )
 
         # Action space size based on the Action Enum
         self.action_space_size = len(action_enum)
@@ -139,21 +154,34 @@ class SimpleQAgent(RLAgent):
         # Calculate velocity and acceleration magnitudes
         velocity_magnitude = np.linalg.norm(particle.velocity)
         acceleration_magnitude = np.linalg.norm(particle.acceleration)
+        timestep = particle.timestep
 
         # Bin the magnitudes logarithmically
-        velocity_bin = min(
-            int(
-                np.log10(velocity_magnitude + 1e-10) / np.log10(10) * self.velocity_bins
-            ),
-            self.velocity_bins - 1,
-        )
-        acceleration_bin = min(
-            int(
-                np.log10(acceleration_magnitude + 1e-10) / np.log10(10) * self.acc_bins
-            ),
-            self.acc_bins - 1,
+        # velocity_bin = min(
+        #     int(
+        #         np.log10(velocity_magnitude + 1e-10) / np.log10(10) * self.velocity_bins
+        #     ),
+        #     self.velocity_bins - 1,
+        # )
+        velocity_bin = np.digitize(np.log10(velocity_magnitude), self.log10_vel_edges)
+
+        # acceleration_bin = min(
+        #     int(
+        #         np.log10(acceleration_magnitude + 1e-10) / np.log10(10) * self.acc_bins
+        #     ),
+        #     self.acc_bins - 1,
+        # )
+        acceleration_bin = np.digitize(
+            np.log10(acceleration_magnitude), self.log10_acc_edges
         )
 
+        # timestep_bin = min(
+        #     int(
+        #         np.log10(timestep + 1e-10) / np.log10(10) * self.t_step_bins
+        #     ),
+        #     self.t_step_bins - 1,
+        # )
+        timestep_bin = np.digitize(np.log10(timestep), self.log10_t_edges)
         # Compute the dot product and normalize to the range [-1, 1]
         if velocity_magnitude > 0 and acceleration_magnitude > 0:
             dot_product = np.dot(particle.velocity, particle.acceleration) / (
@@ -163,12 +191,18 @@ class SimpleQAgent(RLAgent):
             dot_product = 0.0
 
         # Normalize dot product to a bin range from 0 to dot_product_bins
-        dot_product_bin = min(
-            int((dot_product + 1) / 2 * self.dot_bins), self.dot_bins - 1
-        )
+
+        # dot_product_bin = min(
+        #     int((dot_product + 1) / 2 * self.dot_bins), self.dot_bins - 1
+        # )
+
+        dot_product_bin = np.digitize(dot_product, self.dot_edges)
+
+        # print(velocity_bin, acceleration_bin, dot_product_bin, timestep_bin)
 
         # Calculate the state index
         state = (
-            velocity_bin * self.acc_bins + acceleration_bin
-        ) * self.dot_bins + dot_product_bin
+            (velocity_bin * self.acc_bins + acceleration_bin) * self.dot_bins
+            + dot_product_bin
+        ) * self.t_step_bins + timestep_bin
         return state

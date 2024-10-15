@@ -61,6 +61,9 @@ def simple_rl_learning(
             energies_file = open(
                 os.path.join(data_directory, f"{episode}.energies.dat"), "w"
             )
+            reward_file = open(
+                os.path.join(data_directory, f"{episode}.rewards.dat"), "w"
+            )
             particles_files = [
                 open(
                     os.path.join(data_directory, f"episode.particle.{i}.{episode}.dat"),
@@ -125,16 +128,16 @@ def simple_rl_learning(
             for _ in range(n_substeps):
                 # Perform integration based on the chosen method
                 if integration_method == IntegrationMethod.SYMPLECTIC_ORDER_1:
-                    environment.symplectic_integrator_order_1(timestep)
+                    environment.symplectic_integrator_order_1(smallest_timestep)
                 elif integration_method == IntegrationMethod.SYMPLECTIC_ORDER_2:
-                    environment.symplectic_integrator_order_2(timestep)
+                    environment.symplectic_integrator_order_2(smallest_timestep)
                 elif integration_method == IntegrationMethod.EULER:
-                    environment.euler_integrator(timestep)
+                    environment.euler_integrator(smallest_timestep)
             # Increment steps
             steps += 1
 
             # Calculate reward based on the system's energy error
-            reward = environment.calculate_reward(steps)
+            reward, energy_term, steps_term = environment.calculate_reward(steps)
 
             for particle in environment.particles:
                 # Get the new state
@@ -146,16 +149,16 @@ def simple_rl_learning(
                 # Transition to next state
                 state = new_state
 
-            # Decay exploration rate
-            agent.decay_exploration()
-
             # Write outputs
             if data_directory is not None:
                 total_acc_calculations = sum(
                     [p.n_acc_calculations for p in environment.particles]
                 )
                 energies_file.write(
-                    f"{steps * base_timestep}, {smallest_timestep}, {environment.this_energy}, {total_acc_calculations}\n"
+                    f"{steps * base_timestep}, {smallest_timestep}, {environment.biggest_timestep}, {environment.this_energy}, {total_acc_calculations}\n"
+                )
+                reward_file.write(
+                    f"{steps*base_timestep}, {reward}, {energy_term}, {steps_term}\n"
                 )
                 for i, p in enumerate(particles_files):
                     x, y, z = environment.particles[i].position
@@ -164,8 +167,11 @@ def simple_rl_learning(
                     p.write(
                         f"{steps * base_timestep}, {x}, {y}, {z}, {vx}, {vy}, {vz}, {ax}, {ay}, {az}\n"
                     )
+        # Decay exploration rate
+        agent.decay_exploration()
 
         if data_directory is not None:
             energies_file.close()
+            reward_file.close()
             for p in particles_files:
                 p.close()

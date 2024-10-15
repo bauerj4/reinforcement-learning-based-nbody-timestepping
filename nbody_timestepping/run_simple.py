@@ -4,6 +4,8 @@ Main driver for the simulation code.
 
 import sys
 import json
+import numpy as np
+import os
 
 from nbody_timestepping.environment import SimpleEnvironment
 from nbody_timestepping.agent import SimpleQAgent
@@ -43,3 +45,9 @@ if __name__ == "__main__":
         min_timestep=config["train"]["min_timestep"],
         data_directory=config["train"]["data_directory"],
     )
+
+    # Convert the PyTorch tensor to a NumPy array
+    numpy_array = agent.q_table.cpu().numpy()
+
+    # Save the NumPy array as a binary file
+    np.save(os.path.join(config["train"]["data_directory"], "q_table.npy"), numpy_array)
