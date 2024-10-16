@@ -1,0 +1,12 @@
+{
+    "train" : {
+        "integration_method" : "SYMPLECTIC_ORDER_2",
+        "base_steps_per_episode" : 100000,
+        "base_timestep" : 0.001,
+        "min_timestep" : 0.0000001,
+        "max_timestep" : 0.0001,
+        "eta_velocity" : 0.2,
+        "eta_acceleration" : 0.1,
+        "data_directory" : "data/big_body_small_body_e_0.95_velocity_condition"
+    }
+}

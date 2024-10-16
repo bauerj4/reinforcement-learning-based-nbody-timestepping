@@ -9,7 +9,7 @@ import os
 
 from nbody_timestepping.environment import SimpleEnvironment
 from nbody_timestepping.agent import SimpleQAgent
-from nbody_timestepping.train import simple_rl_learning
+from nbody_timestepping.train import velocity_condition
 from nbody_timestepping.particle import IntegrationMethod
 
 if __name__ == "__main__":
@@ -27,28 +27,20 @@ if __name__ == "__main__":
     data_file = sys.argv[2]
     env = SimpleEnvironment()
     env.load_particles_from_gadget(data_file)
-    env.gamma = config["train"].get("steps_reward") or 0.5
 
     # Run Q-Learning
 
     integration_method = getattr(
         IntegrationMethod, config["train"]["integration_method"]
     )
-    agent = SimpleQAgent(**config["agent"])
-    simple_rl_learning(
-        agent,
+    velocity_condition(
         env,
-        config["train"]["episodes"],
         config["train"]["base_timestep"],
         integration_method,
         base_steps_per_episode=config["train"]["base_steps_per_episode"],
         max_timestep=config["train"]["max_timestep"],
         min_timestep=config["train"]["min_timestep"],
+        eta_velocity=config["train"]["eta_velocity"],
+        eta_acceleration=config["train"]["eta_acceleration"],
         data_directory=config["train"]["data_directory"],
     )
-
-    # Convert the PyTorch tensor to a NumPy array
-    numpy_array = agent.q_table.cpu().numpy()
-
-    # Save the NumPy array as a binary file
-    np.save(os.path.join(config["train"]["data_directory"], "q_table.npy"), numpy_array)

@@ -102,7 +102,7 @@ class SimpleQAgent(RLAgent):
         self.action_enum = action_enum
         self.t_step_bins = t_step_bins
 
-        self.dot_edges = np.linspace(0, 1, dot_bins)
+        self.dot_edges = np.linspace(-1, 1, dot_bins)
         self.log10_vel_edges = np.linspace(0, np.log10(vel_hist_max), velocity_bins)
         self.log10_acc_edges = np.linspace(0, np.log10(acc_hist_max), acc_bins)
         self.log10_t_edges = np.linspace(
@@ -198,7 +198,7 @@ class SimpleQAgent(RLAgent):
 
         dot_product_bin = np.digitize(dot_product, self.dot_edges)
 
-        # print(velocity_bin, acceleration_bin, dot_product_bin, timestep_bin)
+        # print(velocity_bin, acceleration_bin, dot_product_bin, timestep_bin, dot_product)
 
         # Calculate the state index
         state = (

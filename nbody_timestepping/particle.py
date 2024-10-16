@@ -59,13 +59,17 @@ class Particle:
     ) -> None:
         self.mass = mass
         self.pid = pid
+        self.softening = None
         acceleration = acceleration or [0.0, 0.0, 0.0]
         self.position = torch.tensor(position, dtype=torch.float32)
         self.velocity = torch.tensor(velocity, dtype=torch.float32)
         self.acceleration = torch.tensor(acceleration, dtype=torch.float32)
         self.n_acc_calculations = 0
+        self.n_acc_calls = 0
         self.time_since_last_acceleration = None
         self.timestep = 1.0
+        self.elapsed_kick_time = 0.0
+        self.elapsed_drift_time = 0.0
 
     def kinetic_energy(self) -> float:
         """
@@ -88,6 +92,7 @@ class Particle:
             The timestep for position update.
         """
         self.position += self.velocity * timestep
+        self.elapsed_drift_time += timestep
 
     def recalculate_acceleration(
         self,
@@ -100,12 +105,13 @@ class Particle:
         Recalculate the particle's acceleration based on the current system's state.
         This should include gravitational forces and other interactions.
         """
+        self.n_acc_calls += 1
         # Do a gravity calculation
         if timestep is not None and self.time_since_last_acceleration is not None:
             self.time_since_last_acceleration += timestep
         if (
             self.time_since_last_acceleration is None
-            or self.time_since_last_acceleration >= self.timestep
+            or self.time_since_last_acceleration + timestep >= self.timestep
             or force_recalculate
         ):
             # Compute acceleration
@@ -114,7 +120,10 @@ class Particle:
                 if p.pid == self.pid:
                     continue
                 r_hat = p.position - self.position
-                acceleration += r_hat * g * p.mass / torch.norm(r_hat) ** 3
+                r_soft = (torch.norm(r_hat) ** 2 + self.softening**2) ** 0.5
+                r_hat /= torch.norm(r_hat)
+                # acceleration += r_hat * g * p.mass / torch.norm(r_hat) ** 3
+                acceleration += r_hat * g * p.mass / r_soft**2
             acceleration = acceleration.cpu().numpy()
             self.acceleration = acceleration
             self.n_acc_calculations += 1
@@ -142,3 +151,9 @@ class Particle:
             particles, timestep=timestep, force_recalculate=force_recalculate
         )  # Recalculate acceleration before each kick
         self.velocity += self.acceleration * timestep
+        self.elapsed_kick_time += timestep
+        print(
+            torch.norm(torch.tensor(self.acceleration)),
+            self.elapsed_drift_time,
+            self.elapsed_kick_time,
+        )

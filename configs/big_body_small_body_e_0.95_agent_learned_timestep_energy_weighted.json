@@ -5,8 +5,8 @@
         "exploration_rate" : 1.0,
         "exploration_decay" : 0.9,
         "velocity_bins" : 7,
-        "acc_bins" : 7,
-        "dot_bins" : 7,
+        "acc_bins" : 10,
+        "dot_bins" : 2,
         "t_step_bins" : 5,
         "vel_hist_max" : 10000.0,
         "acc_hist_max" : 100000.0,
@@ -16,10 +16,11 @@
     "train" : {
         "episodes" : 100,
         "integration_method" : "SYMPLECTIC_ORDER_2",
-        "base_steps_per_episode" : 15000,
-        "base_timestep" : 0.00025,
+        "base_steps_per_episode" : 100000,
+        "base_timestep" : 0.000025,
         "min_timestep" : 0.00000001,
-        "max_timestep" : 0.00025,
-        "data_directory" : "data/big_body_small_body_e_0.95_agent_learned_timestep"
+        "max_timestep" : 0.0001,
+        "steps_reward" : 0.05,
+        "data_directory" : "data/big_body_small_body_e_0.95_agent_learned_timestep_energy_weighted"
     }
 }

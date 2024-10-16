@@ -12,7 +12,9 @@ class SimpleEnvironment:
     in the 0 position.
     """
 
-    def __init__(self, G: float = INTERNAL_G, gamma: float = 0.5):
+    def __init__(
+        self, G: float = INTERNAL_G, gamma: float = 0.5, softening: float = 0.25
+    ):
         """
         Initializes an empty environment. Particles can be loaded from a GADGET file.
 
@@ -23,6 +25,8 @@ class SimpleEnvironment:
         gamma : float, optional
             The trade-off between relative energy change and
             computational cost spent in gravity calculations
+        softening : float
+            The gravitational softening (if none is set)
         """
         self.particles = []
         self.G = G
@@ -30,6 +34,7 @@ class SimpleEnvironment:
         self.last_energy = None
         self.initial_energy = None
         self.gamma = gamma
+        self.softening = softening
 
     @property
     def smallest_timestep(self):
@@ -64,6 +69,8 @@ class SimpleEnvironment:
 
             for mass, pos, vel, pid in zip(masses, positions, velocities, particle_ids):
                 particle = Particle(mass=mass, position=pos, velocity=vel, pid=pid)
+                if particle.softening is None:
+                    particle.softening = self.softening
                 self.particles.append(particle)
 
     def compute_total_energy(self) -> float:
@@ -150,8 +157,13 @@ class SimpleEnvironment:
         timestep : float
             The timestep for the integrator.
         """
-        # We should calculate if the total timestep will take us to a new
-        # force calulation. The half steps will mess this calculation up.
+
+        # TODO: We can't kick the higher level particles this way. We have to
+        # call the actual updates synchronously. Doing this will drift the particle
+        # under its t = 0 acceleration instead of its t = 1/2. We need to kick and drift by
+        # the particle timestep if the force is recalculated. The way this is structured
+        # will break the symplectic nature of the integrator if the timestep is variable.
+
         if all([p.time_since_last_acceleration is not None for p in self.particles]):
             recalculate_forces = [
                 p.time_since_last_acceleration + timestep >= p.timestep
